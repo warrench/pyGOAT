@@ -9,15 +9,15 @@ For pyGOAT to work properly the sympy package needs to be altered slightly to al
 Find your sympy installation folder and navigate to \sympy\utilities and edit the lambdify.py file to include in the namespace
 
 
-SCIPY = {}
+>SCIPY = {}
 
-SCIPY_DEFAULT = {"I": 1j}
+>SCIPY_DEFAULT = {"I": 1j}
 
-SCIPY_TRANSLATIONS = {}
+>SCIPY_TRANSLATIONS = {}
 
 And add the following dictionary entry to the MODULES dictionary
 
-"scipy": (SCIPY, SCIPY_DEFAULT, SCIPY_TRANSLATIONS, ("from scipy.special import *",))
+>"scipy": (SCIPY, SCIPY_DEFAULT, SCIPY_TRANSLATIONS, ("from scipy.special import *",))
 
 
 This package also makes use of the odeintw wrapper to allow odeint to take in matrices as an initial state for computing the time evolved unitary. This can be found here,
