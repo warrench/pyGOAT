@@ -9,6 +9,11 @@ import sympy as sym
 from odeintw import odeintw
 import numpy as np
 import scipy as sp
+import scipy.special as spec
+
+MODULES = ['numpy',
+           {'erf': spec.erf},
+           {'erfc': spec.erfc}]
 
 
 #============================= Pulse Types ====================================
@@ -294,10 +299,10 @@ def minfunc(alpha, H, dH, Utarg, times,params):
     for key in params:
         dH[key] = set_params(dH[key],params)
     #lambdify the statements
-    Ht = sym.lambdify(t,Ht,modules=['numpy','scipy'])
+    Ht = sym.lambdify(t,Ht,modules=MODULES)
     dHt = {}
     for key in dH:
-        dHt[key] = sym.lambdify(t,dH[key],modules=['scipy','numpy'])
+        dHt[key] = sym.lambdify(t,dH[key],modules=MODULES)
     # Run the time evolution
     Uf = integrator(asys,times,Ht,dHt)
     Uf[0] = tidyup(Uf[0])
@@ -312,130 +317,6 @@ def minfunc(alpha, H, dH, Utarg, times,params):
 #    dg = infidelity_jac(Utarg,Uf) 
     
     return g#, #dg
-
-
-
-if __name__=='__main__':
-#    #Make the matrices    
-#    Z = np.array([[-1,0],[0,1]])
-#    X = np.array([[0,1],[1,0]])
-#    Z = sym.Matrix(Z)
-#    X = sym.Matrix(X)
-#
-#    #Make pulse params
-#    t = sym.symbols('t')
-#    A = sym.symbols('A')
-#    t0 = sym.symbols('t0')
-#    sigma = sym.symbols('sigma')
-#    params = {A:1,t0:15,sigma:1}
-#    #Make the pulse and gradient
-#    Gauss = GaussianPulse(A,t0,sigma)
-#    grad = gradient(Gauss)
-#    #Substitute the paramters for the pulse and the gradient
-#    Gauss = set_params(Gauss,params)
-#    gradsub = {}
-#    for key in grad:
-#        gradsub[key] = set_params(grad[key],params)
-#    #Make the Hamiltonians
-#    H = Z + Gauss*X
-#    dH = gradient_ctrls(gradsub,X)
-##    print(H)
-##    print(dH)
-#    #Lambdify the matrices
-#    H = sym.lambdify(t,H)
-#    for key in dH:
-#        dH[key] = sym.lambdify(t,dH[key])
-#    #integrate the system
-#    time = np.linspace(0,30,3001)
-#    U_f = integrator(asys,time,H,dH)
-#    U_f = U_f[0]
-##    print(U_f)
-#    U_f = tidyup(U_f)
-#    print(U_f)
-##    Check it is unitary
-#    print(U_f.dot(U_f.conj().T))
-    
-    
-    
-    
-    
-    #======= Whole process ========
-    
-    # Create the pulses with some sympy parameters
-    # Pull out all the paramters and their values
-    # sequence.freesymbols
-    # remove 't' symbol
-    t = sym.symbols('t')
-    X = sym.Matrix(np.array([[0,1],[1,0]]))
-    Y = sym.Matrix(np.array([[0,-1j],[1j,0]]))
-    Z = 0.5*sym.Matrix(np.array([[1,0],[0,-1]]))
-    X[0,1] = sym.E**(-sym.I*2*sym.pi*t)
-    X[1,0] = sym.E**(sym.I*2*sym.pi*t)
-    Y[0,1] = Y[0,1]*sym.E**(-sym.I*2*sym.pi*t)
-    Y[1,0] = Y[1,0]*sym.E**(sym.I*2*sym.pi*t)
-#    
-    # Make the pulse parameters for X and Y
-    # We will use 3 Gaussian control pulses each for X and Y
-    N = 3
-#    
-    pulseX = {}
-    pulseY = {}
-    for i in range(N):
-        pulseX[i] = {sym.symbols('AX'+'_'+str(i)):2*np.random.rand()-1,
-                     sym.symbols('tX'+'_'+str(i)):np.random.rand()*10+10,
-                     sym.symbols('sigmaX'+'_'+str(i)):np.random.rand()}
-        
-        pulseY[i] = {sym.symbols('AY'+'_'+str(i)):2*np.random.rand()-1.0,
-                     sym.symbols('tY'+'_'+str(i)):np.random.rand()*10+10,
-                     sym.symbols('sigmaY'+'_'+str(i)):np.random.rand()}
-    # Make the pulses
-    pulselistX = []
-    pulselistY = []
-    for i in range(N):
-        temp = pulseX[i]
-        temp = list(temp.keys())
-        pulselistX.append(GaussianPulse(temp[0],temp[1],temp[2]))
-        temp = pulseY[i]
-        temp = list(temp.keys())
-        pulselistY.append(GaussianPulse(temp[0],temp[1],temp[2]))
-    pulse1 = ErfComponent(1,0.5,10,30)*superposition(pulselistX)
-    pulse2 = ErfComponent(1,0.5,10,30)*superposition(pulselistY)
-    #Make Hamiltonian    
-    
-    H = (2*sym.pi)*(Z + pulse1*X + pulse2*Y)
-    dH = gradient(H)
-    
-#     Make a dictionary of params in the order of dH
-    params = {}
-    for i in range(N):
-        temp1 = pulseX[i]
-        temp2 = pulseY[i]
-        for key in dH:
-            try:
-                params[key] = temp1[key]
-            except:
-                try:
-                    params[key] = temp2[key]
-                except:
-                    pass
-    
-#
-    #Make the target unitary
-    Utarg = (1/np.sqrt(2))*np.array([[1,1],[1,-1]])
-#    Utarg = np.array([[0,1],[1,0]])
-    #Make the alpha vector to pass to the optimizer
-    alpha = np.array(list(params.values()))
-    #How long to run
-    times = np.linspace(0,40,401)
-    opts = {'maxiter':250}
-    res = sp.optimize.minimize(minfunc, 
-                               alpha, 
-                               method='L-BFGS-B',
-                               args=(H,dH,Utarg,times,params),
-                               options=opts
-                               )
-    print(res.x)
-    
     
     
 
