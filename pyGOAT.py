@@ -213,16 +213,16 @@ def asys(U,t,H,dH):
     RHS = []
     dUdt = -1j*H(t).dot(U[0])
     RHS.append(dUdt)
-#    for i,key in enumerate(dH):
-#        RHS.append(-1j*(dH[key](t).dot(U[0]) + H(t).dot(U[i])))
+    for i,key in enumerate(dH):
+        RHS.append(-1j*(dH[key](t).dot(U[0]) + H(t).dot(U[i+1])))
     return RHS
 
 def integrator(sys,t,H,dH):
     U0 = []
     shape = H(0).shape
     U0.append(np.eye(shape[0],dtype='complex128'))
-#    for i in range(len(dH)):
-#        U0.append(1j*np.zeros(shape))
+    for i in range(len(dH)):
+        U0.append(1j*np.zeros(shape))
     sol = odeintw(sys,U0,t,args=(H,dH), atol=1e-12, rtol=1e-12)
     U_f = sol[-1]
     return U_f
@@ -292,7 +292,8 @@ def minfunc(alpha, H, dH, Utarg, times,params):
     #This will story the list of keys in order
 #    print(alpha)
     keys = list(params.keys())
-    #alpha needs to be in the key order
+
+    #alpha and dH needs to be in the key order
     params = dict(zip(keys,alpha))
     #substitute in the alpha parameters
     Ht = set_params(H,params)
@@ -301,7 +302,7 @@ def minfunc(alpha, H, dH, Utarg, times,params):
     #lambdify the statements
     Ht = sym.lambdify(t,Ht,modules=MODULES)
     dHt = {}
-    for key in dH:
+    for key in params:
         dHt[key] = sym.lambdify(t,dH[key],modules=MODULES)
     # Run the time evolution
     Uf = integrator(asys,times,Ht,dHt)
@@ -314,9 +315,9 @@ def minfunc(alpha, H, dH, Utarg, times,params):
     print('The parameters are:')
     print(params)
     print('\n')
-#    dg = infidelity_jac(Utarg,Uf) 
+    dg = infidelity_jac(Utarg,Uf) 
     
-    return g#, #dg
+    return g, dg
     
     
 

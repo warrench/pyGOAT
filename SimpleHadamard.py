@@ -85,6 +85,7 @@ res = sp.optimize.minimize(goat.minfunc,
                            alpha, 
                            method='L-BFGS-B',
                            args=(H,dH,Utarg,times,params),
-                           options=opts
+                           jac=True,
+                           options=opts                           
                            )
 print(res.x)
