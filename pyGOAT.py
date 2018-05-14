@@ -10,6 +10,7 @@ from odeintw import odeintw
 import numpy as np
 import scipy as sp
 import scipy.special as spec
+import sympy.physics.quantum.matrixutils as utils
 
 MODULES = ['numpy',
            {'erf': spec.erf},
@@ -208,13 +209,16 @@ def gradient_ctrls(grad,Hctrl):
 # Need to test
 def asys(U,t,H,dH):
     """
-    Coupled differential equation to solve
+    Coupled differential equation to solve. Use sparse*dense to speed up
     """
     RHS = []
-    dUdt = -1j*H(t).dot(U[0])
+    dUdt = -1j*utils.to_scipy_sparse(H(t))*np.matrix(U[0])
+#    dUdt = dUdt.toarray()
     RHS.append(dUdt)
     for i,key in enumerate(dH):
-        RHS.append(-1j*(dH[key](t).dot(U[0]) + H(t).dot(U[i+1])))
+        temp = -1j*(utils.to_scipy_sparse(dH[key](t))*np.matrix(U[0]) 
+                       + utils.to_scipy_sparse(H(t))*np.matrix(U[i+1]))
+        RHS.append(temp)
     return RHS
 
 def integrator(sys,t,H,dH):
@@ -225,6 +229,7 @@ def integrator(sys,t,H,dH):
         U0.append(1j*np.zeros(shape))
     sol = odeintw(sys,U0,t,args=(H,dH), atol=1e-12, rtol=1e-12)
     U_f = sol[-1]
+    print('Integration Complete...')
     return U_f
 
 #EVERYTHING IS AWESOME!!!!!!!!

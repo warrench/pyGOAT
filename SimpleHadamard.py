@@ -23,7 +23,7 @@ X = sym.Matrix(np.array([[0,1],[1,0]]))
 Y = sym.Matrix(np.array([[0,-1j],[1j,0]]))
 Z = 0.5*sym.Matrix(np.array([[1,0],[0,-1]]))
 X[0,1] = sym.E**(-sym.I*2*sym.pi*t)
-X[1,0] = sym.E**(sym.I*2*sym.pi*t)
+X[1,0] = sym.E**(sym.I*2*sym.pi*t),
 Y[0,1] = Y[0,1]*sym.E**(-sym.I*2*sym.pi*t)
 Y[1,0] = Y[1,0]*sym.E**(sym.I*2*sym.pi*t)
 #    
@@ -51,8 +51,8 @@ for i in range(N):
     temp = pulseY[i]
     temp = list(temp.keys())
     pulselistY.append(goat.GaussianPulse(temp[0],temp[1],temp[2]))
-pulse1 = goat.ErfComponent(1,0.5,10,30)*goat.superposition(pulselistX)
-pulse2 = goat.ErfComponent(1,0.5,10,30)*goat.superposition(pulselistY)
+pulse1 = goat.ErfComponent(1,0.5,5,25)*goat.superposition(pulselistX)
+pulse2 = goat.ErfComponent(1,0.5,5,25)*goat.superposition(pulselistY)
 #Make Hamiltonian    
 
 H = (2*sym.pi)*(Z + pulse1*X + pulse2*Y)
@@ -79,7 +79,7 @@ Utarg = (1/np.sqrt(2))*np.array([[1,1],[1,-1]])
 #Make the alpha vector to pass to the optimizer
 alpha = np.array(list(params.values()))
 #How long to run
-times = np.linspace(0,40,401)
+times = np.linspace(0,30,1201)
 opts = {'maxiter':250}
 res = sp.optimize.minimize(goat.minfunc, 
                            alpha, 
