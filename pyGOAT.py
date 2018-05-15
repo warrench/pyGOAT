@@ -253,9 +253,8 @@ def tidyup(A,atol=1e-6):
 #Need to implement
 
 def infidelity(Utarg,Uact):
-    d = Utarg.ndim
+    d = len(Utarg)
     Utarg = Utarg.conj().T
-
     g = 1.0 - (1/d)*np.abs(np.trace(Utarg.dot(Uact)))
     return g
 
