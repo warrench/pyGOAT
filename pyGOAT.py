@@ -255,21 +255,24 @@ def tidyup(A,atol=1e-6):
 def infidelity(Utarg,Uact):
     d = len(Utarg)
     Utarg = Utarg.conj().T
-    g = 1.0 - (1/d)*np.abs(np.trace(Utarg.dot(Uact)))
+    Utarg = utils.to_scipy_sparse(Utarg)
+    g = 1.0 - (1/d)*np.abs(np.trace(Utarg*np.matrix(Uact)))
     return g
 
 def infidelity_jac(Utarg,U):
     d = Utarg.ndim
     #conjugate transpose of Utarg
     Utarg = Utarg.conj().T
+    Utarg = utils.to_scipy_sparse(Utarg)
     #Sort out the components of U
     Uact = U[0]
     Ugrad = U[1:]
     #compute the overlap
-    gstar = np.conjugate(np.trace(Utarg.dot(Uact)))    
+#    gstar = np.conjugate(np.trace(Utarg.dot(Uact)))
+    gstar = np.conjugate(np.trace(Utarg*np.matrix(Uact)))    
     dg = []
     for dU in Ugrad:
-        inside = (gstar/np.abs(gstar))*(1/d)*np.trace(Utarg.dot(dU))
+        inside = (gstar/np.abs(gstar))*(1/d)*np.trace(Utarg*np.matrix(dU))
         dg.append(-inside.real)
     dg = np.array(dg)
     return dg
